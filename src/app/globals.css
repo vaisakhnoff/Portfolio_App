@@ -1,26 +1,289 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core Colors */
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --text-muted: #a1a1aa;
+  /* zinc-400 */
+  --accent-gold: #d4af37;
+  --accent-red: #ff3b3b;
+
+  /* Glassmorphism Configuration */
+  --glass-bg: rgba(20, 20, 20, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 12px;
+
+  /* Spacing System Root Variables (Base 4px approach) */
+  --space-xs: 0.25rem;
+  /* 4px */
+  --space-sm: 0.5rem;
+  /* 8px */
+  --space-md: 1rem;
+  /* 16px */
+  --space-lg: 2rem;
+  /* 32px */
+  --space-xl: 4rem;
+  /* 64px */
+  --space-2xl: 8rem;
+  /* 128px */
 }
 
 @theme inline {
+  /* Extend theme colors automatically */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-text-muted: var(--text-muted);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-red: var(--accent-red);
+
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base Config */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(circle at center, #111111 0%, #0a0a0a 100%);
+  background-attachment: fixed;
+  background-size: 100vw 100vh;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Glassmorphism Utilities */
+@utility glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+@utility glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+}
+
+/* Typography Scale Component Classes */
+.text-hero {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+  text-shadow: 0 0 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 640px) {
+  .text-hero {
+    font-size: 5rem;
+  }
+}
+
+.text-heading {
+  font-size: 1.8rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+@media (min-width: 640px) {
+  .text-heading {
+    font-size: 3rem;
+  }
+}
+
+.text-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+@media (min-width: 640px) {
+  .text-body {
+    font-size: 1.125rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Premium Micro-Interactions
+ *
+ * Uses a custom ease (snappy overshoot) for all hover/click transitions.
+ * All effects are subtle — premium feel, not flashy.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ease-premium: cubic-bezier(0.23, 1, 0.32, 1);
+  --gold-glow-sm: 0 0 12px rgba(212, 175, 55, 0.15);
+  --gold-glow-md: 0 0 20px rgba(212, 175, 55, 0.2), 0 0 40px rgba(212, 175, 55, 0.08);
+}
+
+/* ── Gold gradient text utility ──────────────────────────────────────── */
+@utility text-gold-gradient {
+  background: linear-gradient(135deg,
+      #d4af37 0%,
+      #f5e6c8 40%,
+      #d4af37 60%,
+      #b8976a 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Heading accent spans — animated gold gradient ───────────────────── */
+.text-heading .text-accent-gold,
+.text-hero .text-accent-gold {
+  background: linear-gradient(135deg,
+      #d4af37 0%,
+      #f5e6c8 45%,
+      #d4af37 55%,
+      #b8976a 100%);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: background-position 0.8s var(--ease-premium);
+}
+
+.text-heading .text-accent-gold:hover,
+.text-hero .text-accent-gold:hover {
+  background-position: 100% 50%;
+}
+
+/* ── Button micro-interactions ───────────────────────────────────────── */
+button,
+a[class*="px-"],
+a[class*="rounded"] {
+  transition:
+    transform 0.4s var(--ease-premium),
+    box-shadow 0.4s var(--ease-premium),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+button:hover,
+a[class*="px-"]:hover,
+a[class*="rounded"]:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: var(--gold-glow-sm);
+}
+
+button:active,
+a[class*="px-"]:active,
+a[class*="rounded"]:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: var(--gold-glow-sm);
+  transition-duration: 0.1s;
+}
+
+/* Gold background buttons get a stronger glow */
+.bg-accent-gold:hover,
+.bg-foreground:hover {
+  box-shadow: var(--gold-glow-md);
+}
+
+/* ── Navigation link micro-interactions ──────────────────────────────── */
+nav a {
+  position: relative;
+  transition:
+    color 0.3s var(--ease-premium),
+    transform 0.3s var(--ease-premium);
+}
+
+nav a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  transition: width 0.4s var(--ease-premium), left 0.4s var(--ease-premium);
+}
+
+nav a:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+nav a:hover {
+  transform: translateY(-1px);
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+}
+
+/* ── Skill pills micro-interactions ─────────────────────────────────── */
+span[class*="rounded-full"][class*="glass"] {
+  transition:
+    transform 0.35s var(--ease-premium),
+    box-shadow 0.35s var(--ease-premium),
+    border-color 0.3s ease,
+    color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+span[class*="rounded-full"][class*="glass"]:hover,
+span[class*="rounded-full"][class*="glass"]:active {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: var(--gold-glow-sm);
+}
+
+/* ── Glass panel hover glow ─────────────────────────────────────────── */
+.glass-panel {
+  transition:
+    box-shadow 0.5s var(--ease-premium),
+    border-color 0.5s var(--ease-premium);
+}
+
+.glass-panel:hover {
+  box-shadow: var(--gold-glow-md);
+  border-color: rgba(212, 175, 55, 0.12);
+}
+
+/* ── Project card "View Project" link ────────────────────────────────── */
+div[class*="group-hover:text-accent-gold"][class*="cursor-pointer"] {
+  transition:
+    color 0.3s var(--ease-premium),
+    transform 0.3s var(--ease-premium);
+}
+
+div[class*="group-hover:text-accent-gold"][class*="cursor-pointer"]:hover {
+  transform: translateX(4px);
+}
+
+/* ── Smooth fade-in for section content (intersection observer fallback) */
+.text-heading,
+.text-body {
+  animation: fadeSlideUp 0.6s var(--ease-premium) both;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Form input focus glow ──────────────────────────────────────────── */
+input:focus,
+textarea:focus {
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.1);
 }
