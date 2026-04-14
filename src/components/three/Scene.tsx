@@ -670,7 +670,7 @@ function BackgroundTextLayer() {
               ref={(mesh) => {
                 textRefs.current[index] = mesh;
               }}
-              font={helvetikerFont}
+              font={helvetikerFont as any}
               size={config.size}
               height={config.height}
               curveSegments={10}
