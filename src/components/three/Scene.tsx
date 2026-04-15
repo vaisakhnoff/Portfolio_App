@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useMemo, useEffect, useCallback } from "react";
+import { Suspense, useRef, useMemo, useEffect, useCallback, useState } from "react";
 import { Canvas, useFrame, ThreeEvent, useThree } from "@react-three/fiber";
 import { Center, Text3D } from "@react-three/drei";
 import * as THREE from "three";
@@ -29,7 +29,7 @@ const _startLk = new THREE.Vector3();
 const _endLk = new THREE.Vector3();
 
 const PARTICLE_COUNT_DESKTOP = 360;
-const PARTICLE_COUNT_MOBILE = 90;
+const PARTICLE_COUNT_MOBILE = 180;
 
 const PARTICLE_PALETTE = [
   new THREE.Color("#ffffff"),
@@ -86,6 +86,8 @@ function interpolateCamera(progress: number, mobileScale: number) {
 
   _pos.x *= mobileScale;
   _look.x *= mobileScale;
+  _pos.y *= mobileScale === 1 ? 1 : 0.6; // Slightly less aggressive scale for y
+  _look.y *= mobileScale === 1 ? 1 : 0.6;
 
   return { pos: _pos, look: _look };
 }
@@ -203,11 +205,8 @@ function ParticleInteractionController({
     const hoverMedia = window.matchMedia("(hover: hover) and (pointer: fine)");
 
     const syncEnabled = () => {
-      interactionRef.current.enabled =
-        window.innerWidth >= 768 && hoverMedia.matches;
-      if (!interactionRef.current.enabled) {
-        interactionRef.current.active = false;
-      }
+      // Always enable interaction so tap/ripple works on mobile
+      interactionRef.current.enabled = true;
     };
 
     const updatePointer = (event: PointerEvent) => {
@@ -274,6 +273,14 @@ function ParticleField({
 }) {
   const pointsRef = useRef<THREE.Points>(null!);
   const dataRef = useRef<ParticleData | null>(null);
+  const mobileRef = useRef(false);
+
+  useEffect(() => {
+    const check = () => { mobileRef.current = window.innerWidth < 768; };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const data = useMemo(() => {
     const count =
@@ -308,6 +315,7 @@ function ParticleField({
           uFogFar: { value: 30.0 },
           uFogStrength: { value: 0.45 },
           uFogColor: { value: FOG_COLOR_REST.clone() },
+          uMobile: { value: 0.0 },
         },
         vertexShader: /* glsl */ `
           attribute float aSize;
@@ -334,6 +342,7 @@ function ParticleField({
           uniform float uFogFar;
           uniform float uFogStrength;
           uniform vec3 uFogColor;
+          uniform float uMobile;
           varying vec3 vColor;
           varying float vDist;
           varying float vInteract;
@@ -348,9 +357,10 @@ function ParticleField({
             vec3 hoverColor = mix(vColor, vec3(1.0, 0.98, 0.92), vInteract * 0.18);
             vec3 foggedColor = mix(hoverColor, uFogColor, fogFactor * 0.35);
             float fogAlpha = 1.0 - fogFactor * 0.7;
+            float glowDimmer = mix(1.0, 0.65, uMobile); // Reduce glow intensity on mobile
             gl_FragColor = vec4(
               foggedColor,
-              alpha * depthAlpha * insideAlpha * fogAlpha * (1.0 + vInteract * 0.22) * uScrollFade
+              alpha * depthAlpha * insideAlpha * fogAlpha * (1.0 + vInteract * 0.22) * uScrollFade * glowDimmer
             );
           }
         `,
@@ -410,10 +420,12 @@ function ParticleField({
       const i4 = i * 4;
       const depth = depths[i];
 
+      const isMobile = mobileRef.current;
+      const speedScale = isMobile ? 0.45 : 1.0;
       const travelBoost = THREE.MathUtils.lerp(1, 1.25, insideBoost);
-      origins[i3] += velocities[i3] * dt * 60 * travelBoost;
-      origins[i3 + 1] += velocities[i3 + 1] * dt * 60 * travelBoost;
-      origins[i3 + 2] += velocities[i3 + 2] * dt * 60 * travelBoost;
+      origins[i3] += velocities[i3] * dt * 60 * travelBoost * speedScale;
+      origins[i3 + 1] += velocities[i3 + 1] * dt * 60 * travelBoost * speedScale;
+      origins[i3 + 2] += velocities[i3 + 2] * dt * 60 * travelBoost * speedScale;
 
       const ox = origins[i3];
       const oy = origins[i3 + 1];
@@ -527,6 +539,7 @@ function ParticleField({
     );
     shader.uniforms.uScrollFade.value = scrollFade;
     shader.uniforms.uInsideBoost.value = insideBoost;
+    shader.uniforms.uMobile.value = mobileRef.current ? 1.0 : 0.0;
   });
 
   return <points ref={pointsRef} geometry={data.geometry} material={material} />;
@@ -696,6 +709,14 @@ function HeroObject() {
   const pulse = useRef(0);
   const materialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const haloMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const mobileRef = useRef(false);
+
+  useEffect(() => {
+    const check = () => { mobileRef.current = window.innerWidth < 768; };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const material = useMemo(
     () =>
@@ -737,13 +758,17 @@ function HeroObject() {
 
   const onPointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    hovered.current = true;
-    document.body.style.cursor = "pointer";
+    if (!mobileRef.current) {
+      hovered.current = true;
+      document.body.style.cursor = "pointer";
+    }
   }, []);
 
   const onPointerOut = useCallback(() => {
-    hovered.current = false;
-    document.body.style.cursor = "";
+    if (!mobileRef.current) {
+      hovered.current = false;
+      document.body.style.cursor = "";
+    }
   }, []);
 
   const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
@@ -760,38 +785,48 @@ function HeroObject() {
     const progress = scrollStore.progress;
     const tunnelProgress = THREE.MathUtils.smoothstep(progress, 0.08, 0.36);
     const insideProgress = THREE.MathUtils.smoothstep(progress, 0.3, 0.44);
+    const isMobile = mobileRef.current;
 
-    groupRef.current.rotation.y = t * 0.08 + tunnelProgress * 0.18;
-    groupRef.current.rotation.x = Math.sin(t * 0.22) * 0.05 * (1 - insideProgress);
-    groupRef.current.position.y = Math.sin(t * 0.45) * 0.06 * (1 - insideProgress * 0.75);
+    groupRef.current.rotation.y = t * (isMobile ? 0.04 : 0.08) + tunnelProgress * (isMobile ? 0.09 : 0.18);
+    groupRef.current.rotation.x = Math.sin(t * (isMobile ? 0.11 : 0.22)) * 0.05 * (1 - insideProgress);
+    groupRef.current.position.y = Math.sin(t * (isMobile ? 0.22 : 0.45)) * 0.06 * (1 - insideProgress * 0.75);
 
     pulse.current *= 0.92;
     if (pulse.current < 0.005) pulse.current = 0;
     const p = pulse.current;
 
-    const baseScale = THREE.MathUtils.lerp(1, 1.3, tunnelProgress) * 1.1; // More engaging on all screen sizes
+    const baseScale = THREE.MathUtils.lerp(1, 1.3, tunnelProgress) * (isMobile ? 1.03 : 1.1); // More engaging on all screen sizes
+    
+    // Tap interaction effect reduction on mobile
+    const currentHoverScale = isMobile ? SCALE_REST : SCALE_HOVER;
+    const currentPulseScale = isMobile ? 1.08 : SCALE_PULSE;
+    
     const interactionScale =
       p > 0
-        ? THREE.MathUtils.lerp(SCALE_HOVER, SCALE_PULSE, p)
+        ? THREE.MathUtils.lerp(currentHoverScale, currentPulseScale, p)
         : hovered.current
-          ? SCALE_HOVER
+          ? currentHoverScale
           : SCALE_REST;
     const scaleTarget = baseScale * interactionScale;
 
     const emissiveBase = THREE.MathUtils.lerp(EMISSIVE_REST, 0.14, tunnelProgress);
+    const targetEmHover = isMobile ? emissiveBase : EMISSIVE_HOVER;
+    const targetEmPulse = isMobile ? EMISSIVE_HOVER : EMISSIVE_PULSE;
     const emTarget =
       p > 0
-        ? THREE.MathUtils.lerp(EMISSIVE_HOVER, EMISSIVE_PULSE, p)
+        ? THREE.MathUtils.lerp(targetEmHover, targetEmPulse, p)
         : hovered.current
-          ? EMISSIVE_HOVER
+          ? targetEmHover
           : emissiveBase;
 
     const haloBase = THREE.MathUtils.lerp(HALO_REST, 0.13, tunnelProgress);
+    const targetHaloHover = isMobile ? haloBase : HALO_HOVER;
+    const targetHaloPulse = isMobile ? HALO_HOVER : HALO_PULSE;
     const haloTarget =
       p > 0
-        ? THREE.MathUtils.lerp(HALO_HOVER, HALO_PULSE, p)
+        ? THREE.MathUtils.lerp(targetHaloHover, targetHaloPulse, p)
         : hovered.current
-          ? HALO_HOVER
+          ? targetHaloHover
           : haloBase;
 
     meshMaterial.emissiveIntensity += (emTarget - meshMaterial.emissiveIntensity) * 0.08;
@@ -824,19 +859,29 @@ function AtmosphereRig() {
   const rimLightRef = useRef<THREE.DirectionalLight>(null!);
   const fillLightRef = useRef<THREE.PointLight>(null!);
   const fogRef = useRef<THREE.Fog>(null!);
+  const mobileRef = useRef(false);
+
+  useEffect(() => {
+    const check = () => { mobileRef.current = window.innerWidth < 768; };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useFrame(() => {
     const progress = scrollStore.progress;
     const insideProgress = THREE.MathUtils.smoothstep(progress, 0.28, 0.42);
+    const isMobile = mobileRef.current;
+    const lightScale = isMobile ? 0.75 : 1.0;
 
     fogRef.current.color.copy(_fogColor.lerpColors(FOG_COLOR_REST, FOG_COLOR_INSIDE, insideProgress));
     fogRef.current.near = THREE.MathUtils.lerp(7.25, 4.8, insideProgress);
     fogRef.current.far = THREE.MathUtils.lerp(30, 18.5, insideProgress);
 
-    ambientRef.current.intensity = THREE.MathUtils.lerp(0.26, 0.16, insideProgress);
-    keyLightRef.current.intensity = THREE.MathUtils.lerp(1.35, 0.82, insideProgress);
-    rimLightRef.current.intensity = THREE.MathUtils.lerp(0.78, 0.42, insideProgress);
-    fillLightRef.current.intensity = THREE.MathUtils.lerp(0.18, 0.08, insideProgress);
+    ambientRef.current.intensity = THREE.MathUtils.lerp(0.26, 0.16, insideProgress) * lightScale;
+    keyLightRef.current.intensity = THREE.MathUtils.lerp(1.35, 0.82, insideProgress) * lightScale;
+    rimLightRef.current.intensity = THREE.MathUtils.lerp(0.78, 0.42, insideProgress) * lightScale;
+    fillLightRef.current.intensity = THREE.MathUtils.lerp(0.18, 0.08, insideProgress) * lightScale;
   });
 
   return (
@@ -866,6 +911,15 @@ export default function Scene() {
     ripplePulse: 0,
   });
 
+  const [dpr, setDpr] = useState<[number, number]>([1, 2]);
+
+  useEffect(() => {
+    const handleResize = () => setDpr(window.innerWidth < 768 ? [1, 1.5] : [1, 2]);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <Canvas
       camera={{ position: [0, 0.65, 6.4], fov: 40 }}
@@ -876,7 +930,7 @@ export default function Scene() {
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.05,
       }}
-      dpr={[1, 2]}
+      dpr={dpr}
       style={{
         position: "absolute",
         top: 0,

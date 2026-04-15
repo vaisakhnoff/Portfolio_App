@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 
 /**
@@ -9,15 +9,25 @@ import { motion, Variants } from "framer-motion";
  * This ensures no overlapping and a "one scene at a time" buttery feel.
  */
 export default function CinematicSection({ children, id }: { children: ReactNode, id?: string }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile(); // Check immediately on mount
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Use a premium ease matching GSAP's power2.out
-  const transition = { duration: 1.0, ease: [0.25, 1, 0.5, 1] as const };
+  const transition = { duration: isMobile ? 1.2 : 1.0, ease: [0.25, 1, 0.5, 1] as const };
+  const yOffset = isMobile ? 20 : 50;
 
   // Entrance variants: fade in, slide up
   const variants: Variants = {
-    hidden: { opacity: 0, y: 50, scale: 0.98 },
+    hidden: { opacity: 0, y: yOffset, scale: 0.98 },
     visible: { opacity: 1, y: 0, scale: 1, transition },
     // On exit, fade out and slide up further
-    exit: { opacity: 0, y: -50, scale: 0.98, transition }
+    exit: { opacity: 0, y: -yOffset, scale: 0.98, transition }
   };
 
   return (

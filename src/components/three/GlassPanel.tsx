@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -16,8 +16,7 @@ const GOLD_SHADOW_REST =
 const GOLD_SHADOW_HOVER =
   "0 0 20px rgba(212,175,55,0.15), 0 0 50px rgba(212,175,55,0.06), inset 0 0 20px rgba(212,175,55,0.04)";
 
-// Module-level — safe because this file only loads on the client (ssr:false chain)
-const IS_DESKTOP = typeof window !== "undefined" && window.innerWidth >= 768;
+// IS_DESKTOP is now managed within the component using state.
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -56,6 +55,15 @@ export default function GlassPanel({
   const hovered = useRef(false);
   const opacity = useRef(0);
 
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Magnetic hover state — target and smoothed current
   const magnetTarget = useRef({ x: 0, y: 0 });
   const magnetCurrent = useRef({ x: 0, y: 0 });
@@ -73,7 +81,7 @@ export default function GlassPanel({
 
   /* ── Hover + magnetic handlers (DOM events, no React re-render) ──── */
   const handleEnter = () => {
-    if (!IS_DESKTOP) return;
+    if (!isDesktop) return;
     hovered.current = true;
     if (panelRef.current) {
       panelRef.current.style.borderColor = GOLD_BORDER_HOVER;
@@ -92,7 +100,7 @@ export default function GlassPanel({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!IS_DESKTOP) return;
+    if (!isDesktop) return;
     const rect = e.currentTarget.getBoundingClientRect();
     // Normalize cursor offset from center to [-0.5, 0.5]
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
@@ -198,7 +206,7 @@ export default function GlassPanel({
         transform
         distanceFactor={3}
         position={[0, 0, 0.02]}
-        style={{ pointerEvents: IS_DESKTOP ? "auto" : "none" }}
+        style={{ pointerEvents: isDesktop ? "auto" : "none" }}
       >
         <div ref={htmlRef} style={{ opacity: 0 }}>
           <div
@@ -212,8 +220,8 @@ export default function GlassPanel({
               borderRadius: 10,
               border: `1px solid ${GOLD_BORDER_REST}`,
               background: "rgba(15, 15, 15, 0.55)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
+              backdropFilter: `blur(${isDesktop ? 12 : 6}px)`,
+              WebkitBackdropFilter: `blur(${isDesktop ? 12 : 6}px)`,
               boxShadow: GOLD_SHADOW_REST,
               color: "#fff",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
