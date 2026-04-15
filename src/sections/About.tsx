@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
+import Image from "next/image";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -37,8 +38,20 @@ export default function About() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
-          className="space-y-10 text-center"
+          className="space-y-10 text-center flex flex-col items-center"
         >
+          <motion.div variants={itemVariants} className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full p-[2px] bg-gradient-to-br from-accent-gold/60 via-white/10 to-transparent shadow-[0_0_40px_rgba(212,175,55,0.15)] group">
+            <div className="absolute inset-[2px] rounded-full overflow-hidden bg-black/50 backdrop-blur-md">
+              <div className="absolute inset-0 bg-accent-gold/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+              <Image
+                src="/profile.jpg"
+                alt="Vaisakh N Profile"
+                fill
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          </motion.div>
+
           <motion.div variants={itemVariants} className="space-y-4">
             <h2 className="text-heading">
               About <span className="text-accent-gold">Me</span>

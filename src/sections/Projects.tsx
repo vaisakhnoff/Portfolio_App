@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { startTransition, useState } from "react";
+import Image from "next/image";
 
 type ProjectItem = {
   id: number;
@@ -11,6 +12,8 @@ type ProjectItem = {
   impact: string;
   stack: string[];
   accent: string;
+  image: string;
+  link: string;
 };
 
 const projects: ProjectItem[] = [
@@ -21,8 +24,10 @@ const projects: ProjectItem[] = [
     description:
       "A productivity-focused web application designed to manage and track time efficiently with a clean UI and optimized performance.",
     impact: "Built to support focused daily planning with a lightweight experience, clear task visibility, and performance-conscious interactions.",
-    stack: ["React.js", "Node.js", "Express.js", "MongoDB"],
+    stack: ["EJS", "Node.js", "Express", "MongoDB", "Razorpay", "Vercel"],
     accent: "from-[#f5e6c8]/20 via-[#d4af37]/10 to-transparent",
+    image: "/timevault.png",
+    link: "https://time-vault-ecommerce-web-app.onrender.com/",
   },
   {
     id: 2,
@@ -31,8 +36,10 @@ const projects: ProjectItem[] = [
     description:
       "A business-oriented website for showcasing products with category filtering and WhatsApp-based inquiry system.",
     impact: "Created a cleaner customer journey for product discovery while keeping inquiries fast and accessible for business use.",
-    stack: ["Next.js", "Tailwind CSS", "Category Filtering", "WhatsApp Integration"],
+    stack: ["React", "Tailwind", "Vercel", "WhatsApp Integration", "Cloudinary"],
     accent: "from-[#d4af37]/18 via-[#ffffff]/8 to-transparent",
+    image: "/flowershop.png",
+    link: "https://anjaliflowers.vercel.app/",
   },
 ];
 
@@ -138,33 +145,49 @@ export default function Projects() {
                   whileHover={{ scale: 1.01 }}
                   className="relative grid min-h-[560px] grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]"
                 >
-                  <div className="relative min-h-[280px] overflow-hidden border-b border-white/8 lg:min-h-full lg:border-b-0 lg:border-r">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${activeProject.accent}`} />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_28%,rgba(255,255,255,0.16)_0%,transparent_28%)]" />
-                    <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.03)_0%,transparent_45%,rgba(212,175,55,0.06)_100%)]" />
+                  <a 
+                    href={activeProject.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block relative shadow-2xl min-h-[280px] overflow-hidden border-b border-white/8 lg:min-h-full lg:border-b-0 lg:border-r group/img cursor-pointer"
+                  >
+                    <div className="absolute inset-0 z-0 bg-black">
+                      <Image
+                        src={activeProject.image}
+                        alt={activeProject.title}
+                        fill
+                        className="object-cover object-top transition-transform duration-700 group-hover/img:scale-[1.03] opacity-80"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${activeProject.accent} mix-blend-overlay z-10 opacity-70`} />
+                    <div className="absolute inset-0 bg-black/60 z-10 hover:bg-black/40 transition-colors duration-500" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_28%,rgba(255,255,255,0.08)_0%,transparent_40%)] z-10" />
+                    <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.8)_0%,transparent_50%,rgba(0,0,0,0.6)_100%)] z-10" />
 
-                    <div className="relative flex h-full flex-col justify-between p-7 sm:p-10">
+                    <div className="relative z-20 flex h-full flex-col justify-between p-7 sm:p-10 pointer-events-none">
                       <div className="flex items-start justify-between gap-4">
-                        <span className="rounded-full border border-white/12 bg-black/15 px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-white/70">
+                        <span className="rounded-full border border-white/12 bg-black/40 px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-white/90 backdrop-blur-md">
                           {activeProject.category}
                         </span>
-                        <span className="text-[0.7rem] uppercase tracking-[0.3em] text-white/40">
-                          Case Study
-                        </span>
+                        <div className="flex group-hover/img:text-accent-gold transition-colors duration-300">
+                          <svg className="w-5 h-5 opacity-70 group-hover/img:opacity-100 group-hover/img:translate-x-1 group-hover/img:-translate-y-1 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 sm:max-w-md">
+                      <div className="flex flex-wrap gap-2.5 sm:max-w-md mt-12">
                         {activeProject.stack.map((item) => (
                           <div
                             key={item}
-                            className="rounded-2xl border border-white/8 bg-black/18 px-4 py-4 text-sm text-white/72 backdrop-blur-sm"
+                            className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-white/80 backdrop-blur-md"
                           >
                             {item}
                           </div>
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </a>
 
                   <div className="relative flex flex-col justify-between p-7 sm:p-10 lg:p-12">
                     <div className="space-y-6">
