@@ -532,15 +532,15 @@ function ParticleField({
   return <points ref={pointsRef} geometry={data.geometry} material={material} />;
 }
 
-const EMISSIVE_REST = 0.08;
-const EMISSIVE_HOVER = 0.22;
-const EMISSIVE_PULSE = 0.55;
-const HALO_REST = 0.04;
-const HALO_HOVER = 0.09;
-const HALO_PULSE = 0.18;
+const EMISSIVE_REST = 0.16;
+const EMISSIVE_HOVER = 0.35;
+const EMISSIVE_PULSE = 0.75;
+const HALO_REST = 0.12;
+const HALO_HOVER = 0.20;
+const HALO_PULSE = 0.35;
 const SCALE_REST = 1.0;
-const SCALE_HOVER = 1.08;
-const SCALE_PULSE = 1.14;
+const SCALE_HOVER = 1.12;
+const SCALE_PULSE = 1.25;
 
 type BackgroundTextConfig = {
   text: string;
@@ -746,7 +746,7 @@ function HeroObject() {
     document.body.style.cursor = "";
   }, []);
 
-  const onClick = useCallback((e: ThreeEvent<MouseEvent>) => {
+  const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     pulse.current = 1;
   }, []);
@@ -769,8 +769,7 @@ function HeroObject() {
     if (pulse.current < 0.005) pulse.current = 0;
     const p = pulse.current;
 
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const baseScale = THREE.MathUtils.lerp(1, 1.2, tunnelProgress) * (isMobile ? 0.8 : 1);
+    const baseScale = THREE.MathUtils.lerp(1, 1.3, tunnelProgress) * 1.1; // More engaging on all screen sizes
     const interactionScale =
       p > 0
         ? THREE.MathUtils.lerp(SCALE_HOVER, SCALE_PULSE, p)
@@ -808,7 +807,7 @@ function HeroObject() {
         material={material}
         onPointerOver={onPointerOver}
         onPointerOut={onPointerOut}
-        onClick={onClick}
+        onPointerDown={onPointerDown}
       >
         <torusKnotGeometry args={[1, 0.35, 220, 36, 2, 3]} />
       </mesh>
